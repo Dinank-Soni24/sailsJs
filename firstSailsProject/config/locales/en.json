@@ -1,0 +1,9 @@
+{
+	"Welcome": "Welcome",
+	"A brand new app.": "A brand new app.",
+	"emailAlreadyExists": "Email is already Exists",
+	"created": " user is created",
+	"invalidCredentials": "Invalid email or password",
+	"validCredentials": "login successful",
+	"user.created": "user.created"
+}
