@@ -11,6 +11,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 
+
 module.exports = {
 
     signup: async (req, res) => {
@@ -23,17 +24,17 @@ module.exports = {
         // check user email is already exists or not
         try {
             const user = await User.findOne({ email })
-            {
-                if (user) {
-                    return res.status(401).json({
-                        message2: console.log(lang),
-                        message: sails.__(
-                            'emailAlreadyExists',
-                            { lang: lang }
-                        )
-                    })
-                }
+
+            if (user) {
+                return res.status(401).json({
+                    message2: console.log(lang),
+                    message: sails.__(
+                        'emailAlreadyExists',
+                        { lang: lang }
+                    )
+                })
             }
+
 
             //hash the password
             const hashedPassword = await bcrypt.hash(password, 10);
@@ -65,16 +66,16 @@ module.exports = {
         //find the user
         try {
             const user = await User.findOne({ email })
-            {
-                if (!user) {
-                    return res.status(401).json({
-                        message: sails.__(
-                            'invalidCredentials',
-                            { lang: lang }
-                        )
-                    })
-                }
+
+            if (!user) {
+                return res.status(401).json({
+                    message: sails.__(
+                        'invalidCredentials',
+                        { lang: lang }
+                    )
+                })
             }
+
 
             //check the password
             const checkPassword = await bcrypt.compare(req.body.password, user.password);
@@ -82,23 +83,24 @@ module.exports = {
             if (checkPassword === true) {
 
                 //generate token
-                const token = jwt.sign({ email, password }, "hello", { expiresIn: "1h" })
+                // const token = jwt.sign({ email, password }, "hello", { expiresIn: "3m" })
+                try {
+                    const token = await sails.helpers.generateToken(email, password, "3m")
+                    console.log(token);
+                    const userUpdate = await User.updateOne({ email }, { token: token })
 
-                console.log(token);
-
-                //add token in database
-                const userUpdate = await User.updateOne({ email }, { token: token })
-
-                console.log(userUpdate);
-
-                res.status(200).json({
+                } catch (error) {
+                    return "error"
+                }
+                return res.status(200).json({
                     message: sails.__(
                         'validCredentials',
                         { lang: lang }
                     )
                 })
+
             } else {
-                res.status(401).json({
+                return res.status(401).json({
                     message: sails.__(
                         'invalidCredentials',
                         { lang: lang }
@@ -115,20 +117,27 @@ module.exports = {
         // Get the user's preferred language
         const lang = req.getLocale();
 
-        // get user id from link
-        const { id } = await req.params;
+        try {
+            // get user id from link
+            const { id } = await req.params;
+            console.log(id);
+            const user = await User.findOne({ id })
 
-        const user = await User.findOne({ id })
+            // Verify the JWT token
+            const userUpdate = await User.updateOne({ id }, { token: "" })
 
-        // Verify the JWT token
-        await sails.helpers.verify-token(user.token, "hello");
+            res.status(200).json({
+                message: sails.__('logoutSuccessful', { lang: lang })
+            })
+        } catch (error) {
+            res.status(200).json({
+                message: sails.__('can not logout', { lang: lang }),
+                error: error
+            })
+        }
 
-        console.log(user);
-        const userUpdate = await User.updateOne({ id }, { token: "" })
 
-        res.status(200).json({
-            message: sails.__('logoutSuccessful', { lang: lang })
-          })
+
 
     }
 };

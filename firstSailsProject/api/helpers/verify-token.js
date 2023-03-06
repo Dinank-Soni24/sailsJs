@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken');
-
 module.exports = {
 
 
@@ -12,36 +11,51 @@ module.exports = {
   inputs: {
     token: {
       type: 'string',
-      required: true,
+      required: true
     },
     secret: {
       type: 'string',
-      required: true,
+      required: true
+    }
+  },
+
+
+  exits: {
+
+    success: {
+      description: 'All done.',
+    },
+    invalid: {
+      description: 'The provided token is invalid or malformed.',
+      error: ''
     },
 
-
-    exits: {
-
-      success: {
-        description: 'All done.',
-      },
-
-    },
-
-
-    fn: async function ({ token, secret }) {
-      // TODO
-      try {
-        const decode = await jwt.verify(token, secret);
-        return decode;
-      } catch (error) {
-        throw {
-          error: "token is not verify"
-        }
-
-      }
+    expired: {
+      description: 'Token is not verify'
     }
 
+  },
 
+
+  fn: async function (inputs, exits) {
+
+    try {
+      const { token, secret } = inputs;
+      const decode = await jwt.verify(token, secret);
+      console.log(decode);
+      return exits.success(decode);
+
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        // console.log(error);
+        // console.log(exits.expired({error: error, message: "hellofkif"}));
+        return exits.expired({error: error, message: "hellofkif"});
+      } else {
+        return exits.invalid(error);
+      }
+    }
   }
 };
+
+
+
